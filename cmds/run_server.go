@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"runtime"
 	"path"
+	"runtime"
 	"strconv"
 
 	"github.com/abrookins/radar"
@@ -53,7 +53,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	var err error
 	flag.Parse()
-    _, curFilename, _, _ := runtime.Caller(0)
+	_, curFilename, _, _ := runtime.Caller(0)
 	parentDir := path.Dir(path.Dir(curFilename))
 	locations, err = radar.NewLocationManager(path.Join(parentDir, *filename))
 	if err != nil {

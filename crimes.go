@@ -10,7 +10,6 @@ import (
 	"github.com/unit3/kdtree"
 )
 
-
 const HALF_MILE = 0.01
 
 type Point kdtree.Node
@@ -82,7 +81,7 @@ func (locs Locations) Near(query Point) (Locations, error) {
 	tree := kdtree.BuildTree(nodes)
 	locations := make(Locations)
 	ranges := map[int]kdtree.Range{0: {query.Coordinates[0] - HALF_MILE, query.Coordinates[0] + HALF_MILE},
-						           1: {query.Coordinates[1] - HALF_MILE, query.Coordinates[1] + HALF_MILE}}
+		1: {query.Coordinates[1] - HALF_MILE, query.Coordinates[1] + HALF_MILE}}
 	fmt.Println(ranges)
 	results, err := tree.FindRange(ranges)
 	if err != nil {
