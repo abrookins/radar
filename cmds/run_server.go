@@ -1,7 +1,8 @@
 package main
 
+import _ "net/http/pprof"
+
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -13,7 +14,7 @@ import (
 	"github.com/abrookins/radar"
 )
 
-var locations radar.Locations
+var locations radar.LocationManager
 var port = flag.Int("p", 8081, "port number")
 var filename = flag.String("f", "", "data filename")
 
@@ -40,13 +41,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 	query := radar.Point{}
 	query.Coordinates = []float64{lat, lng}
-	nearby, _ := locations.Near(query)
-	resp, err := json.Marshal(nearby.AllCrimes())
+	nearby, err := locations.Near(query)
 	if err != nil {
 		log.Fatal(err)
-	} else {
-		w.Write(resp)
 	}
+	resp := nearby.AllCrimes().ToJson()
+	w.Write(resp.Bytes())
 	defer r.Body.Close()
 }
 
@@ -60,6 +60,7 @@ func main() {
 		log.Fatal("Could not open data file.", err, path.Join(parentDir, *filename))
 		return
 	}
+
 	http.HandleFunc("/", handler)
 	fmt.Println("Running server on port", *port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", *port), nil))

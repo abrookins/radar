@@ -1,6 +1,7 @@
 package radar
 
 import (
+	"bytes"
 	"encoding/csv"
 	"fmt"
 	"log"
@@ -30,12 +31,19 @@ type Crime struct {
 	Point Point
 }
 
+type Crimes []*Crime
+
 type Location struct {
 	Point  Point
 	Crimes []*Crime
 }
 
 type Locations map[string]*Location
+
+type LocationManager struct {
+	Locations Locations
+	Tree *kdtree.Tree
+}
 
 func getCoordKey(x float64, y float64) string {
 	return fmt.Sprintf("%s,%s", x, y)
@@ -53,17 +61,27 @@ func (c Crime) String() string {
 	return fmt.Sprintf("(%v, %v, %v, %v, %v)", c.Id, c.Date, c.Time, c.Type, c.Point)
 }
 
-func (locs Locations) AllPoints() Points {
+func (cs Crimes) ToJson() bytes.Buffer {
+	var buf bytes.Buffer
+	buf.WriteString("[")
+	for _, crime := range cs {
+		buf.WriteString(fmt.Sprintf("{%v,%v,%v,%v,%v}", crime.Id, crime.Date, crime.Time, crime.Point.Coordinates[0], crime.Point.Coordinates[1]))
+	}
+	buf.WriteString("]")
+	return buf
+}
+
+func (m LocationManager) AllPoints() Points {
 	points := make(Points, 0)
-	for _, loc := range locs {
+	for _, loc := range m.Locations {
 		points = append(points, loc.Point)
 	}
 	return points
 }
 
-func (locs Locations) AllCrimes() []*Crime {
-	crimes := make([]*Crime, 0)
-	for _, loc := range locs {
+func (m LocationManager) AllCrimes() Crimes {
+	crimes := make(Crimes, 0)
+	for _, loc := range m.Locations {
 		for _, crime := range loc.Crimes {
 			crimes = append(crimes, crime)
 		}
@@ -71,44 +89,46 @@ func (locs Locations) AllCrimes() []*Crime {
 	return crimes
 }
 
-func (locs Locations) Near(query Point) (Locations, error) {
-	points := locs.AllPoints()
+func (m LocationManager) Near(query Point) (LocationManager, error) {
+	nearby := LocationManager{}
+	nearby.Locations = make(Locations)
+	ranges := map[int]kdtree.Range{0: {query.Coordinates[0] - HALF_MILE, query.Coordinates[0] + HALF_MILE},
+		1: {query.Coordinates[1] - HALF_MILE, query.Coordinates[1] + HALF_MILE}}
+	results, err := m.Tree.FindRange(ranges)
+	if err != nil {
+		return nearby, err
+	}
+	for i := 0; i < len(results); i++ {
+		node := results[i]
+		key := getCoordKey(node.Coordinates[0], node.Coordinates[1])
+		// If we have a record for this coordinate, add it to ``nearby``.
+		location, ok := m.Locations[key]
+		if ok {
+			nearby.Locations[key] = location
+		}
+	}
+	return nearby, nil
+}
+
+func NewLocationManager(filename string) (LocationManager, error) {
+	var err error
+	m := LocationManager{}
+	rows, err := readCrimes(filename)
+	if err != nil {
+		return m, err
+	}
+	m.Locations, err = parseCrimes(rows)
+	if err != nil {
+		return m, err
+	}
+	points := m.AllPoints()
 	nodes := make([]*kdtree.Node, len(points))
 	for i, p := range points {
 		n := kdtree.Node(p)
 		nodes[i] = &n
 	}
-	tree := kdtree.BuildTree(nodes)
-	locations := make(Locations)
-	ranges := map[int]kdtree.Range{0: {query.Coordinates[0] - HALF_MILE, query.Coordinates[0] + HALF_MILE},
-		1: {query.Coordinates[1] - HALF_MILE, query.Coordinates[1] + HALF_MILE}}
-	fmt.Println(ranges)
-	results, err := tree.FindRange(ranges)
-	if err != nil {
-		return nil, err
-	}
-	for i := 0; i < len(results); i++ {
-		node := results[i]
-		key := getCoordKey(node.Coordinates[0], node.Coordinates[1])
-		location, ok := locs[key]
-		if ok {
-			locations[key] = location
-		}
-	}
-	return locations, nil
-}
-
-func NewLocationManager(filename string) (Locations, error) {
-	var locations Locations
-	rows, err := readCrimes(filename)
-	if err != nil {
-		return nil, err
-	}
-	locations, err = parseCrimes(rows)
-	if err != nil {
-		return nil, err
-	}
-	return locations, nil
+	m.Tree = kdtree.BuildTree(nodes)
+	return m, nil
 }
 
 func readCrimes(filename string) (CsvRows, error) {
@@ -165,12 +185,12 @@ func rawCoords(row CsvRow) (Coordinates, error) {
 }
 
 func parseCrimes(rows CsvRows) (Locations, error) {
-	locations := map[string]*Location{}
+	locations := make(Locations)
 
 	for _, row := range rows {
 		coords, err := rawCoords(row)
 		if err != nil {
-			return nil, err
+			continue
 		}
 		key := getCoordKey(coords[0], coords[1])
 		location, ok := locations[key]
