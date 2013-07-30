@@ -1,6 +1,6 @@
 package main
 
-import _ "net/http/pprof"
+// import _ "net/http/pprof"
 
 import (
 	"flag"
@@ -14,7 +14,7 @@ import (
 	"github.com/abrookins/radar"
 )
 
-var locations radar.LocationManager
+var tracker radar.CrimeTracker
 var port = flag.Int("p", 8081, "port number")
 var filename = flag.String("f", "", "data filename")
 
@@ -41,7 +41,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 	query := radar.Point{}
 	query.Coordinates = []float64{lat, lng}
-	nearby, err := locations.Near(query)
+	nearby, err := tracker.Near(query)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func main() {
 	flag.Parse()
 	_, curFilename, _, _ := runtime.Caller(0)
 	parentDir := path.Dir(path.Dir(curFilename))
-	locations, err = radar.NewLocationManager(path.Join(parentDir, *filename))
+	tracker, err = radar.NewCrimeTracker(path.Join(parentDir, *filename))
 	if err != nil {
 		log.Fatal("Could not open data file.", err, path.Join(parentDir, *filename))
 		return
