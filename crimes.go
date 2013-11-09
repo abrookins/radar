@@ -17,7 +17,7 @@ const HALF_MILE = 0.01
 // A Point represents a 2d coordinate within a kd-tree.
 type Point kdtree.Node
 
-type Points []Point
+type Points []*Point
 
 type CsvRow []string
 
@@ -25,11 +25,9 @@ type CsvRows []CsvRow
 
 type Coordinates []float64
 
-type CrimeType string
+type CrimeTypes []*string
 
-type CrimeTypes []*CrimeType
-
-func (types CrimeTypes) Contains(crimeType CrimeType) bool {
+func (types CrimeTypes) Contains(crimeType string) bool {
 	for _, t := range types {
 		if crimeType == *t {
 			return true
@@ -38,7 +36,7 @@ func (types CrimeTypes) Contains(crimeType CrimeType) bool {
 	return false
 }
 
-func (types CrimeTypes) GetOrCreate(crimeType CrimeType) CrimeType {
+func (types CrimeTypes) GetOrCreate(crimeType string) string {
 	if !types.Contains(crimeType) {
 		types = append(types, &crimeType)
 	}
@@ -49,7 +47,7 @@ type Crime struct {
 	Id   int64
 	Date string
 	Time string
-	Type CrimeType
+	Type string
 }
 
 func (c Crime) String() string {
@@ -61,15 +59,22 @@ type Crimes []*Crime
 func (cs Crimes) ToJson() bytes.Buffer {
 	var buf bytes.Buffer
 	buf.WriteString("[")
-	for _, crime := range cs {
-		buf.WriteString(fmt.Sprintf("{%v,%v,%v,%v}", crime.Id, crime.Date, crime.Time, crime.Type))
+	total := len(cs)
+	for i, crime := range cs {
+		var comma string
+		if (i == total - 1) {
+			comma = ""
+		} else {
+			comma = ","
+		}
+		buf.WriteString(fmt.Sprintf("{%v,\"%v\",\"%v\",\"%v\"}%v", crime.Id, crime.Date, crime.Time, crime.Type, comma))
 	}
 	buf.WriteString("]")
 	return buf
 }
 
 type Location struct {
-	Point  Point
+	Point  *Point
 	Crimes []*Crime
 }
 
@@ -77,20 +82,17 @@ type Locations map[string]*Location
 
 func (locs Locations) getOrCreateFromRow(row CsvRow) (*Location, error) {
 	var location *Location
-	var ok bool
-	var point Point
+	var pointExists bool
 	coords, err := rawCoords(row)
 	if err != nil {
 		return location, err
 	}
 	key := getCoordKey(coords[0], coords[1])
-	location, ok = locs[key]
-	if ok {
-		point = location.Point
-	} else {
-		point = Point{}
+	location, pointExists = locs[key]
+	if !pointExists {
+		point := Point{}
 		point.Coordinates = []float64{coords[0], coords[1]}
-		location = &Location{point, make([]*Crime, 0)}
+		location = &Location{&point, make([]*Crime, 0)}
 		locs[key] = location
 	}
 	return location, nil
@@ -153,7 +155,7 @@ func (t CrimeTracker) parseCrimes(rows CsvRows) (Locations, error) {
 		if err != nil {
 			return locations, err
 		}
-		crimeType := t.CrimeTypes.GetOrCreate(CrimeType(row[3]))
+		crimeType := t.CrimeTypes.GetOrCreate(string(row[3]))
 		location.Crimes = append(location.Crimes, &Crime{id, row[1], row[2], crimeType})
 	}
 	return locations, nil
@@ -173,7 +175,7 @@ func NewCrimeTracker(filename string) (CrimeTracker, error) {
 	points := tracker.AllPoints()
 	nodes := make([]*kdtree.Node, len(points))
 	for i, p := range points {
-		n := kdtree.Node(p)
+		n := kdtree.Node(*p)
 		nodes[i] = &n
 	}
 	tracker.Tree = kdtree.BuildTree(nodes)
