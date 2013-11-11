@@ -16,6 +16,9 @@ def import_crime_data(in_file, out_file=None):
     Load Portland crime data from a CSV file ``in_file``, convert coordinate
     data for each crime from NAD83 to WGS84, then write to a file named
     {in_file}_wgs84.csv.
+
+	TODO: This writes columns named "X coordinate" which is actually longitude
+	and "Y Coordinate" which is actually latitude.
     """
     skipped = 0
     if out_file is None:
@@ -43,11 +46,10 @@ def import_crime_data(in_file, out_file=None):
         if x and y:
             try:
                 coord = transformation.TransformPoint(x, y)
-                # The index order here (1, 0) is intended.
-                point = (coord[1], coord[0])
             except TypeError:
                 skipped += 1
             else:
+                # The index order here (1, 0) is intended (longitude, latitude).
                 row[8] = coord[1]
                 row[9] = coord[0]
                 w.writerow(row)

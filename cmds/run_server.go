@@ -14,7 +14,7 @@ import (
 	"github.com/abrookins/radar"
 )
 
-var tracker radar.CrimeTracker
+var finder radar.CrimeFinder
 var port = flag.Int("p", 8081, "port number")
 var filename = flag.String("f", "", "data filename")
 
@@ -41,11 +41,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 	query := radar.Point{}
 	query.Coordinates = []float64{lat, lng}
-	nearby, err := tracker.Near(query)
+	nearby, err := finder.FindNear(query)
 	if err != nil {
 		log.Fatal(err)
 	}
-	resp := nearby.AllCrimes().ToJson()
+	resp := nearby.Crimes().ToJson()
 	w.Write(resp.Bytes())
 	defer r.Body.Close()
 }
