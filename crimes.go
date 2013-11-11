@@ -24,7 +24,7 @@ const HALF_MILE = 0.00714
 // A Point represents a 2d coordinate within a kd-tree.
 type Point kdtree.Node
 
-// 
+//
 type Points []*Point
 
 type CsvRow []string
@@ -33,7 +33,7 @@ type CsvRows []CsvRow
 
 type Coordinates []float64
 
-// We store a slice of all the types of crime in the CSV data. This isn't used 
+// We store a slice of all the types of crime in the CSV data. This isn't used
 // anywhere in the code but is something we make available to clients.
 type CrimeTypes []string
 
@@ -63,13 +63,13 @@ type Crimes []*Crime
 
 // ToJson creates a bytes.Buffer containing a JSON representation of Crimes.
 func (cs Crimes) ToJson() *bytes.Buffer {
-	buf:= new(bytes.Buffer)
+	buf := new(bytes.Buffer)
 	total := len(cs)
 	buf.WriteString("[")
 	line := `{%v,"%v","%v","%v"}`
 
 	for i, crime := range cs {
-		isLast := total > 1 && i == total -1
+		isLast := total > 1 && i == total-1
 		buf.WriteString(fmt.Sprintf(line, crime.Id, crime.Date, crime.Time, crime.Type))
 		if !isLast {
 			buf.WriteString(",")
@@ -118,7 +118,7 @@ func (locs CrimeLocations) getOrCreateFromCsvRow(row CsvRow) (*CrimeLocation, er
 
 // The result of a search for crimes near a location.
 type SearchResult struct {
-	CrimeLocations  CrimeLocations
+	CrimeLocations CrimeLocations
 }
 
 // Points returns all of the coordinates of a SearchResult's CrimeLocations.
@@ -143,9 +143,9 @@ func (r SearchResult) Crimes() Crimes {
 
 // An object that can find crimes near a WGS84 coordinate.
 type CrimeFinder struct {
-	CrimeLocations  CrimeLocations
-	CrimeTypes CrimeTypes
-	Tree       *kdtree.Tree
+	CrimeLocations CrimeLocations
+	CrimeTypes     CrimeTypes
+	Tree           *kdtree.Tree
 }
 
 // FindNear returns a SearchResult containing CrimeLocations within a half-mile of ``point``
@@ -297,5 +297,3 @@ func floatCoordsFromRow(row CsvRow) (Coordinates, error) {
 	coords[1] = lng
 	return coords, nil
 }
-
-

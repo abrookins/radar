@@ -88,7 +88,7 @@ func TestCrimesString(t *testing.T) {
 }
 
 func TestCrimesToJson(t *testing.T) {
-	expectedCrimes := Crimes {
+	expectedCrimes := Crimes{
 		{int64(1), "1/1/2013", "04:30", "Burglary"},
 		{int64(2), "1/2/2013", "04:45", "Robbery"},
 	}
@@ -109,13 +109,13 @@ func TestCrimeLocationHasFields(t *testing.T) {
 	address1 := &expectedPoint
 	address2 := l.Point
 	// Struct equality: Compare two pointers
-	if (address1 != address2) {
+	if address1 != address2 {
 		t.Error("CrimeLocation.Point is not the expected Point", &address1, &address2)
 	}
 }
 
 func TestCrimeLocationsGetOrCreateFromRowDoesNotExist(t *testing.T) {
-	csvRow := CsvRow{"13690824","05/27/2011","08:35:00","Liquor Laws","NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212","ELIOT","PORTLAND PREC NO","590","45.53579735412487","-122.66468312170824"}
+	csvRow := CsvRow{"13690824", "05/27/2011", "08:35:00", "Liquor Laws", "NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212", "ELIOT", "PORTLAND PREC NO", "590", "45.53579735412487", "-122.66468312170824"}
 	locations := make(CrimeLocations, 0)
 	location, _ := locations.getOrCreateFromCsvRow(csvRow)
 	if location.Point.Coordinates[0] != float64(45.53579735412487) {
@@ -130,7 +130,7 @@ func TestCrimeLocationsGetOrCreateFromRowDoesNotExist(t *testing.T) {
 }
 
 func TestCrimeLocationsGetOrCreateFromRowExists(t *testing.T) {
-	csvRow := CsvRow{"13690824","05/27/2011","08:35:00","Liquor Laws","NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212","ELIOT","PORTLAND PREC NO","590","45.53579735412487","-122.66468312170824"}
+	csvRow := CsvRow{"13690824", "05/27/2011", "08:35:00", "Liquor Laws", "NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212", "ELIOT", "PORTLAND PREC NO", "590", "45.53579735412487", "-122.66468312170824"}
 	locations := make(CrimeLocations, 0)
 	location, _ := locations.getOrCreateFromCsvRow(csvRow)
 	// Call again with data at the same coordinates
@@ -146,7 +146,7 @@ func TestCrimeLocationsGetOrCreateFromRowExists(t *testing.T) {
 
 func TestCrimeLocationsGetOrCreateFromRowBadLatitude(t *testing.T) {
 	// The latitude is munged so it won't convert to float64
-	csvRow := CsvRow{"13690824","05/27/2011","08:35:00","Liquor Laws","NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212","ELIOT","PORTLAND PREC NO","590","45.53579735412487","not-a-float"}
+	csvRow := CsvRow{"13690824", "05/27/2011", "08:35:00", "Liquor Laws", "NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212", "ELIOT", "PORTLAND PREC NO", "590", "45.53579735412487", "not-a-float"}
 	locations := make(CrimeLocations, 0)
 	_, err := locations.getOrCreateFromCsvRow(csvRow)
 
@@ -157,7 +157,7 @@ func TestCrimeLocationsGetOrCreateFromRowBadLatitude(t *testing.T) {
 
 func TestCrimeLocationsGetOrCreateFromRowBadLongitude(t *testing.T) {
 	// The longitude is munged so it won't convert to float64
-	csvRow := CsvRow{"13690824","05/27/2011","08:35:00","Liquor Laws","NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212","ELIOT","PORTLAND PREC NO","590","not-a-float","-122.66468312170824"}
+	csvRow := CsvRow{"13690824", "05/27/2011", "08:35:00", "Liquor Laws", "NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212", "ELIOT", "PORTLAND PREC NO", "590", "not-a-float", "-122.66468312170824"}
 	locations := make(CrimeLocations, 0)
 	_, err := locations.getOrCreateFromCsvRow(csvRow)
 
@@ -175,7 +175,7 @@ func TestCrimeFinderFields(t *testing.T) {
 	finder.CrimeTypes = crimeTypes
 	// 1-length slice just to test that we set the value
 	locations := make(CrimeLocations)
-	csvRow := CsvRow{"13690824","05/27/2011","08:35:00","Liquor Laws","NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212","ELIOT","PORTLAND PREC NO","590","45.53579735412487","-122.66468312170824"}
+	csvRow := CsvRow{"13690824", "05/27/2011", "08:35:00", "Liquor Laws", "NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212", "ELIOT", "PORTLAND PREC NO", "590", "45.53579735412487", "-122.66468312170824"}
 	loc, _ := locations.getOrCreateFromCsvRow(csvRow)
 	coordKey := loc.GetCoordinateString()
 	finder.CrimeLocations = locations
@@ -240,7 +240,7 @@ func TestCrimeFinderFindNear(t *testing.T) {
 	}
 
 	// Verify that no distance is more than 0.5 miles
-	for _, p := range(result.CrimeLocations) {
+	for _, p := range result.CrimeLocations {
 		distance := p.Point.GreatCircleDistance(&point)
 		if distance > 0.5 {
 			t.Error("FindNear returned a CrimeLocation more than half a mile away")
