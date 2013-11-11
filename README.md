@@ -28,7 +28,7 @@ The output will be a file named `{in_file_name}}_wgs84.csv`.
 
 # Benchmarks
 
-You can bencharmk with `wrk` (https://github.com/wg/wrk) like this:
+You can benchmarks with `wrk` (https://github.com/wg/wrk) like this:
 
 	wrk -t12 -c400 -d30s "http://localhost:8081/?lat=45.548&lng=-122.6"
 
