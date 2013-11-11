@@ -11,7 +11,8 @@ import (
 // Radius of the earth (M)
 var EARTH_RADIUS = 3959.0
 
-// Calculates the Haversine distance between two points.
+// GreatCircleDistance calculates the Haversine distance between two points.
+// Used to verify distance-based search.
 // https://github.com/kellydunn/golang-geo/blob/master/point.go
 func (p *Point) GreatCircleDistance(p2 *Point) float64 {
 	dLat := (p2.Coordinates[1] - p.Coordinates[1]) * (math.Pi / 180.0)
