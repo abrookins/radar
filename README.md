@@ -32,8 +32,8 @@ You can benchmarks with `wrk` (https://github.com/wg/wrk) like this:
 
 	wrk -t12 -c400 -d30s "http://localhost:8081/?lat=45.548&lng=-122.6"
 
-Just give it the port you are running `radar` on and a lat/long coordinate in
-Portland.
+Send the web service a lat/long coordinate in Portland, Oregon as `lat` and
+`lng` GET parameters.
 
 Output on my machine:
 
