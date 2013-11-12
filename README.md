@@ -19,7 +19,7 @@ The code ships with a version of the City of Portland's crime data from 2011.
 You can load new data with the included `scripts/import.py` script. This takes
 the path of a CSV file and converts the coordinates from NAD83 to WGS84.
 
-To load a file of CSV data from the City (`e.g. crime_incident_data.csv`), run
+To load a file of CSV data from the City (e.g. `crime_incident_data.csv`), run
 this command:
 
 	python import.py crime_incident_data.csv
