@@ -1,1 +1,1 @@
-web: ./run_server -p $PORT -f data/crime_incident_data_wgs84.csv
+web: go run cmds/run_server.go -p 8081 -f data/crime_incident_data_wgs84.csv
