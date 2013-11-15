@@ -247,3 +247,19 @@ func TestCrimeFinderFindNear(t *testing.T) {
 		}
 	}
 }
+
+
+// A regression test to make sure we find locations near a known-good location.
+func TestCrimeFinderFindNearRegression(t *testing.T) {
+	finder, _ := NewCrimeFinder("data/crime_incident_data_wgs84.csv")
+	point := Point{}
+	point.Coordinates = []float64{45.5184, -122.6554}
+	result, _ := finder.FindNear(point)
+
+	expectedLocations := 247 
+	numLocations := len(result.CrimeLocations)
+
+	if expectedLocations != numLocations {
+		t.Error("Wrong number of CrimeLocations: ", numLocations)
+	}
+}
