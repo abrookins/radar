@@ -47,8 +47,8 @@ Output on my machine:
     Requests/sec:   1249.21
     Transfer/sec:     70.53MB
     
-Benchmark stats change depending on the location you use. Sometimes it's
-slower (1200 reqs/sec) and sometimes faster (3500 reqs/sec).
+Benchmark stats change depending on the location you use. Sometimes it's slower
+(1200 reqs/sec) and sometimes faster (3500 reqs/sec).
 
 # License
 
