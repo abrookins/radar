@@ -29,7 +29,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	query.Coordinates = []float64{lat, lng}
 	nearby, err := finder.FindNear(query)
 	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
 		log.Fatal(err)
+		return
 	}
 	resp := nearby.Crimes().ToJson()
 	w.Write(resp.Bytes())

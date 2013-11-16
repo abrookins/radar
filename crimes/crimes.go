@@ -24,7 +24,6 @@ const HALF_MILE = 0.00714
 // A Point represents a 2d coordinate within a kd-tree.
 type Point kdtree.Node
 
-//
 type Points []*Point
 
 type CsvRow []string
