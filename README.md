@@ -23,31 +23,35 @@ the path of a CSV file and converts the coordinates from NAD83 to WGS84.
 To load a file of CSV data from the City (e.g. `crime_incident_data.csv`), run
 this command:
 
-	python import.py crime_incident_data.csv
+    python import.py crime_incident_data.csv
 
 The output will be a file named `{in_file_name}}_wgs84.csv`.
 
 # Benchmarks
 
-You can benchmarks with `wrk` (https://github.com/wg/wrk) like this:
+You can run benchmarks with `wrk` (https://github.com/wg/wrk) like this:
 
-	wrk -t12 -c400 -d30s "http://localhost:8081/?lat=45.548&lng=-122.6"
+    wrk -t12 -c400 -d30s "http://localhost:8081/?lat=45.548&lng=-122.6"
 
 Send the web service a lat/long coordinate in Portland, Oregon as `lat` and
 `lng` GET parameters.
 
 Output on my machine:
 
-	Running 30s test @ http://localhost:8081/?lat=45.548&lng=-122.6
-	  12 threads and 400 connections
-	  Thread Stats   Avg      Stdev     Max   +/- Stdev
-		Latency    76.52ms   13.56ms 174.38ms   70.77%
-		Req/Sec   255.16    156.90   483.00     43.80%
-	  93565 requests in 30.01s, 1.63GB read
-	  Socket errors: connect 157, read 120, write 0, timeout 2254
-	Requests/sec:   3118.16
-	Transfer/sec:     55.53MB
+    Running 30s test @ http://localhost:8081/crimes/near/45.5184/-122.6554
+      12 threads and 400 connections
+      Thread Stats   Avg      Stdev     Max   +/- Stdev
+        Latency   190.92ms   22.74ms 290.56ms   72.67%
+        Req/Sec   104.24     18.19   146.00     63.32%
+      37487 requests in 30.01s, 2.07GB read
+      Socket errors: connect 157, read 143, write 0, timeout 2355
+    Requests/sec:   1249.21
+    Transfer/sec:     70.53MB
+    
+Benchmark stats change depending on the location you use. Sometimes it's slower
+(1200 reqs/sec) and sometimes faster (3500 reqs/sec).
 
 # License
 
 This code is licensed under the MIT license. See LICENSE for details.
+
