@@ -38,6 +38,15 @@ this command:
 
 The output will be a file named `{in_file_name}}_wgs84.csv`.
 
+# Deploying
+
+You can deploy `radar` to Heroku pretty easily. First create an instance using
+a popular Go buildpack:
+
+    heroku create -b https://github.com/kr/heroku-buildpack-go.git
+
+The Procfile in the repo should do the necessaries. Now just push to Heroku!
+
 # Benchmarking with wrk
 
 You can run benchmarks with `wrk` (https://github.com/wg/wrk) like this:
