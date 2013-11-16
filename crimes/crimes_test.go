@@ -195,7 +195,7 @@ func TestCrimeFinderFields(t *testing.T) {
 }
 
 func TestCrimeFinderNewCrimeFinder(t *testing.T) {
-	finder, err := NewCrimeFinder("data/test.csv")
+	finder, err := NewCrimeFinder("../data/test.csv")
 	if err != nil {
 		t.Error("Error creating CrimeFinder: ", err)
 	}
@@ -205,7 +205,7 @@ func TestCrimeFinderNewCrimeFinder(t *testing.T) {
 }
 
 func TestCrimeFinderAll(t *testing.T) {
-	finder, err := NewCrimeFinder("data/test.csv")
+	finder, err := NewCrimeFinder("../data/test.csv")
 	if err != nil {
 		t.Error("Error creating CrimeFinder: ", err)
 	}
@@ -227,7 +227,7 @@ func TestCrimeFinderAll(t *testing.T) {
 }
 
 func TestCrimeFinderFindNear(t *testing.T) {
-	finder, _ := NewCrimeFinder("data/test.csv")
+	finder, _ := NewCrimeFinder("../data/test.csv")
 	point := Point{}
 	point.Coordinates = []float64{45.53435699129174, -122.66469510763777}
 	result, _ := finder.FindNear(point)
@@ -251,7 +251,7 @@ func TestCrimeFinderFindNear(t *testing.T) {
 
 // A regression test to make sure we find locations near a known-good location.
 func TestCrimeFinderFindNearRegression(t *testing.T) {
-	finder, _ := NewCrimeFinder("data/crime_incident_data_wgs84.csv")
+	finder, _ := NewCrimeFinder("../data/crime_incident_data_wgs84.csv")
 	point := Point{}
 	point.Coordinates = []float64{45.5184, -122.6554}
 	result, _ := finder.FindNear(point)

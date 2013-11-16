@@ -3,16 +3,25 @@
 This is a library (and web service) that finds crime data near a WGS84
 coordinate.
 
-# Running
+# Running the Server
 
-To run the web service, check out this code and build it with `go build`
-or install with `go get github.com/abrookins/radar`.
+The `radar` web service is an HTTP server. To run it, check out this code and
+build it with `go build` or install with `go get github.com/abrookins/radar`.
 
 You should receive a `radar` binary. Run that as follows:
 
 	GOMAXPROCS=8 ./radar -p 8081 -f data/crime_incident_data_wgs84.csv
 
 Use whatever value for GOMAXPROCS and the port number that makes sense.
+
+# Running Tests
+
+With the package installed, navigate to its source directory in your `GOPATH`
+and run the following command:
+
+    got test ./...
+
+This is a special form of `go test` that runs tests in sub-packages.
 
 # Loading New Data
 
@@ -27,7 +36,7 @@ this command:
 
 The output will be a file named `{in_file_name}}_wgs84.csv`.
 
-# Benchmarks
+# Benchmarking with wrk
 
 You can run benchmarks with `wrk` (https://github.com/wg/wrk) like this:
 
@@ -48,8 +57,8 @@ Output on my machine:
     Requests/sec:   1249.21
     Transfer/sec:     70.53MB
     
-Benchmark stats change depending on the location you use. Sometimes it's slower
-(1200 reqs/sec) and sometimes faster (3500 reqs/sec).
+Benchmark stats depend on the location you use. Sometimes it's slower (1200
+reqs/sec) and sometimes faster (3500 reqs/sec).
 
 # License
 
