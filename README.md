@@ -5,11 +5,12 @@ coordinate.
 
 # Running
 
-To run the web service, check out this code and build it with `go build`.
+To run the web service, check out this code and build it with `go build`
+or install with `go get github.com/abrookins/radar`.
 
-You should receive a `run_server` binary. Run that as follows:
+You should receive a `radar` binary. Run that as follows:
 
-	GOMAXPROCS=8 ./run_server -p 8081 -f data/crime_incident_data_wgs84.csv
+	GOMAXPROCS=8 ./radar -p 8081 -f data/crime_incident_data_wgs84.csv
 
 Use whatever value for GOMAXPROCS and the port number that makes sense.
 
