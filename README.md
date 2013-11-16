@@ -1,5 +1,7 @@
 # radar: Find Crimes in Portland, Oregon
 
+[![Build Status](https://travis-ci.org/abrookins/radar.png)](https://travis-ci.org/abrookins/radar)
+
 This is a library (and web service) that finds crime data near a WGS84
 coordinate.
 
