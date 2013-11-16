@@ -5,7 +5,7 @@ coordinate.
 
 # Running
 
-To run the web service, check out this code and build it with `go build`.
+To run the web service, check out this code and build it with `go build cmds/run_server.py`.
 
 You should receive a `run_server` binary. Run that as follows:
 
