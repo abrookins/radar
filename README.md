@@ -7,12 +7,13 @@ coordinate.
 
 # Running the Server
 
-The `radar` web service is an HTTP server. To run it, check out this code and
-build it with `go build` or install with `go get github.com/abrookins/radar`.
+To run `radar` as a web service, check out this code and build it with `go
+build` or install with `go get github.com/abrookins/radar`.
 
-You should receive a `radar` binary. Run that as follows:
+You should receive a `radar` binary that provides an HTTP server. Run that as
+follows:
 
-	GOMAXPROCS=8 ./radar -p 8081 -f data/crime_incident_data_wgs84.csv
+	GOMAXPROCS=4 ./radar -p 8081 -f data/crime_incident_data_wgs84.csv
 
 Use whatever value for GOMAXPROCS and the port number that makes sense.
 
