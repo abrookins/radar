@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"path"
-	"runtime"
 	"strconv"
 
-	_ "net/http/pprof"
+	// Uncomment to profile
+	//_ "net/http/pprof"
 
 	"github.com/gorilla/mux"
 
@@ -41,13 +40,9 @@ func main() {
 	var err error
 	flag.Parse()
 
-	// Get the project's directory
-	_, curFilename, _, _ := runtime.Caller(0)
-	parentDir := path.Dir(curFilename)
-
-	finder, err = radar.NewCrimeFinder(path.Join(parentDir, *filename))
+	finder, err = radar.NewCrimeFinder(*filename)
 	if err != nil {
-		log.Fatal("Could not open data file.", err, path.Join(parentDir, *filename))
+		log.Fatal("Could not open data file.", err, *filename)
 		return
 	}
 
