@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
-	/*"encoding/json"*/
 	"log"
 	"os"
 	"strconv"
@@ -49,7 +48,7 @@ func (types CrimeTypes) Contains(crimeType string) bool {
 
 // Data for a single crime in the City's CSV data (one row).
 type Crime struct {
-	Id   int64 
+	Id   int64
 	Date string
 	Time string
 	Type string
