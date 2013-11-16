@@ -9,9 +9,11 @@ import (
 	"runtime"
 	"strconv"
 
+	_ "net/http/pprof"
+
 	"github.com/gorilla/mux"
 
-	"github.com/abrookins/radar"
+	"github.com/abrookins/radar/crimes"
 )
 
 var finder radar.CrimeFinder
@@ -41,7 +43,7 @@ func main() {
 
 	// Get the project's directory
 	_, curFilename, _, _ := runtime.Caller(0)
-	parentDir := path.Dir(path.Dir(curFilename))
+	parentDir := path.Dir(curFilename)
 
 	finder, err = radar.NewCrimeFinder(path.Join(parentDir, *filename))
 	if err != nil {
