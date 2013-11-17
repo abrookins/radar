@@ -136,7 +136,7 @@ func (r SearchResult) ToJson() ([]byte, error) {
 				buf.WriteString(",")
 			}
 		}
-		buf.WriteString("]}")
+		buf.WriteString("]},")
 	}
 	buf.WriteString("]}")
 	return buf.Bytes(), nil
