@@ -14,12 +14,11 @@ import (
 	"github.com/unit3/kdtree"
 )
 
-// One half mile in the WGS84 coordinate system.
-//
-// This is a rough estimate of distance derived from the fact that one degree
-// of latitude or longitude is 70 miles wide at the equator. This distance is
-// constant outside of the equator for latitude, but not for longitude.
-const HALF_MILE = 0.00714
+// One half mile of latitude in the WGS84 coordinate system.
+const HALF_MILE_LAT = 0.00714
+
+// One half mile of longitude in the WGS84 coordinate system.
+const HALF_MILE_LNG = 0.00724
 
 // A Point represents a latitude and longitude coordinate pair.
 type Point struct {
@@ -169,8 +168,8 @@ func (finder *CrimeFinder) FindNear(query Point) (SearchResult, error) {
 	nearby.Query = &query
 	nearby.Locations = make([]*CrimeLocation, 0)
 	ranges := map[int]kdtree.Range{
-		0: {query.Lat - HALF_MILE, query.Lat + HALF_MILE},
-		1: {query.Lng - HALF_MILE, query.Lng + HALF_MILE}}
+		0: {query.Lat - HALF_MILE_LAT, query.Lat + HALF_MILE_LAT},
+		1: {query.Lng - HALF_MILE_LNG, query.Lng + HALF_MILE_LNG}}
 	results, err := finder.Tree.FindRange(ranges)
 	if err != nil {
 		return nearby, err
