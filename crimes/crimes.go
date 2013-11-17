@@ -21,8 +21,11 @@ import (
 // constant outside of the equator for latitude, but not for longitude.
 const HALF_MILE = 0.00714
 
-// A Point represents a 2d coordinate within a kd-tree.
-type Point kdtree.Node
+// A Point represents a latitude and longitude coordinate pair.
+type Point struct {
+	Lat float64
+	Lng float64
+}
 
 type Points []*Point
 
@@ -60,55 +63,29 @@ func (c Crime) String() string {
 
 type Crimes []*Crime
 
-// ToJson creates a bytes.Buffer containing a JSON representation of Crimes.
-func (cs Crimes) ToJson() *bytes.Buffer {
-	buf := new(bytes.Buffer)
-	total := len(cs)
-	buf.WriteString("[")
-	line := `{%v,"%v","%v","%v"}`
-
-	for i, crime := range cs {
-		isLast := total > 1 && i == total-1
-		buf.WriteString(fmt.Sprintf(line, crime.Id, crime.Date, crime.Time, crime.Type))
-		if !isLast {
-			buf.WriteString(",")
-		}
-	}
-	buf.WriteString("]")
-	return buf
-}
-
 // A location in the City's data with a coordinate at which crimes occurred.
 type CrimeLocation struct {
 	Point  *Point
 	Crimes []*Crime
 }
 
-// GetCoordinateString returns a CrimeLocation's coordinates formtted as a
-// string.
-func (loc CrimeLocation) GetCoordinateString() string {
-	return fmt.Sprintf("%s,%s", loc.Point.Coordinates[0], loc.Point.Coordinates[1])
-}
-
-// A map of coordinate strings (slices can't be map keys) to the CrimeLocation
-// at the coordinate.
-type CrimeLocations map[string]*CrimeLocation
+// This will help us find the CrimeLocation that a kd-tree node refers to.
+type LocationLookup map[string]*CrimeLocation
 
 // getOrCreateFromCsvRow gets an existing CrimeLocation for the coordinate
 // stored in "row", or creates a CrimeLocation for that coordinate if one does
 // not exist.
-func (locs CrimeLocations) getOrCreateFromCsvRow(row CsvRow) (*CrimeLocation, error) {
+func (locs LocationLookup) getOrCreateFromCsvRow(row CsvRow) (*CrimeLocation, error) {
 	var location *CrimeLocation
 	var pointExists bool
 	coords, err := floatCoordsFromRow(row)
 	if err != nil {
 		return nil, err
 	}
-	key := getCoordKey(coords[0], coords[1])
+	key := GetCoordinateKey(coords[0], coords[1])
 	location, pointExists = locs[key]
 	if !pointExists {
-		point := Point{}
-		point.Coordinates = []float64{coords[0], coords[1]}
+		point := Point{coords[0], coords[1]}
 		location = &CrimeLocation{&point, make([]*Crime, 0)}
 		locs[key] = location
 	}
@@ -117,13 +94,14 @@ func (locs CrimeLocations) getOrCreateFromCsvRow(row CsvRow) (*CrimeLocation, er
 
 // The result of a search for crimes near a location.
 type SearchResult struct {
-	CrimeLocations CrimeLocations
+	Query     *Point
+	Locations []*CrimeLocation
 }
 
-// Points returns all of the coordinates of a SearchResult's CrimeLocations.
+// Points returns all of the coordinates of a SearchResult's LocationLookup.
 func (r SearchResult) Points() Points {
-	points := make(Points, 0)
-	for _, loc := range r.CrimeLocations {
+	points := make(Points, len(r.Locations))
+	for _, loc := range r.Locations {
 		points = append(points, loc.Point)
 	}
 	return points
@@ -132,7 +110,7 @@ func (r SearchResult) Points() Points {
 // Crimes returns all of the Crimes in a SearchResult.
 func (r SearchResult) Crimes() Crimes {
 	crimes := make(Crimes, 0)
-	for _, loc := range r.CrimeLocations {
+	for _, loc := range r.Locations {
 		for _, crime := range loc.Crimes {
 			crimes = append(crimes, crime)
 		}
@@ -140,66 +118,100 @@ func (r SearchResult) Crimes() Crimes {
 	return crimes
 }
 
+// ToJson returns a SearchResult marshalled to JSON bytes.
+// XXX: This is terrible but gained several hundred requests/sec over json.Marshall.
+func (r SearchResult) ToJson() ([]byte, error) {
+	buf := new(bytes.Buffer)
+	buf.WriteString(fmt.Sprintf(`{"query":{"lat":%v,"lng":%v},"locations":[`, r.Query.Lat, r.Query.Lng))
+
+	for _, location := range r.Locations {
+		total := len(location.Crimes)
+		buf.WriteString(fmt.Sprintf(`{"point":{"lat":%v,"lng":%v},`, location.Point.Lat, location.Point.Lng))
+		buf.WriteString(`"crimes":[`)
+		line := `{"id":%v,"date":"%v","time":"%v","type":"%v"}`
+		for i, crime := range location.Crimes {
+			isLast := total > 1 && i == total-1
+			buf.WriteString(fmt.Sprintf(line, crime.Id, crime.Date, crime.Time, crime.Type))
+			if !isLast {
+				buf.WriteString(",")
+			}
+		}
+		buf.WriteString("]}")
+	}
+	buf.WriteString("]}")
+	return buf.Bytes(), nil
+}
+
 // An object that can find crimes near a WGS84 coordinate.
 type CrimeFinder struct {
-	CrimeLocations CrimeLocations
+	LocationLookup LocationLookup
 	CrimeTypes     CrimeTypes
 	Tree           *kdtree.Tree
 }
 
-// FindNear returns a SearchResult containing CrimeLocations within a half-mile of ``point``
-func (t *CrimeFinder) FindNear(query Point) (SearchResult, error) {
+// Locations returned a slice of all the CrimeLocations in this CrimeFinder
+func (finder *CrimeFinder) Locations() []*CrimeLocation {
+	locations := make([]*CrimeLocation, 0)
+	for _, location := range finder.LocationLookup {
+		locations = append(locations, location)
+	}
+	return locations
+}
+
+// FindNear returns a SearchResult containing LocationLookup within a half-mile of ``query``
+func (finder *CrimeFinder) FindNear(query Point) (SearchResult, error) {
 	nearby := SearchResult{}
-	nearby.CrimeLocations = make(CrimeLocations)
+	nearby.Query = &query
+	nearby.Locations = make([]*CrimeLocation, 0)
 	ranges := map[int]kdtree.Range{
-		0: {query.Coordinates[0] - HALF_MILE, query.Coordinates[0] + HALF_MILE},
-		1: {query.Coordinates[1] - HALF_MILE, query.Coordinates[1] + HALF_MILE}}
-	results, err := t.Tree.FindRange(ranges)
+		0: {query.Lat - HALF_MILE, query.Lat + HALF_MILE},
+		1: {query.Lng - HALF_MILE, query.Lng + HALF_MILE}}
+	results, err := finder.Tree.FindRange(ranges)
 	if err != nil {
 		return nearby, err
 	}
 	for i := 0; i < len(results); i++ {
 		node := results[i]
-		key := getCoordKey(node.Coordinates[0], node.Coordinates[1])
 		// If we have a record for this coordinate, add it to ``nearby``.
-		location, ok := t.CrimeLocations[key]
-		if ok {
-			nearby.CrimeLocations[key] = location
+		key := GetCoordinateKey(node.Coordinates[0], node.Coordinates[1])
+		location, exists := finder.LocationLookup[key]
+		if exists {
+			nearby.Locations = append(nearby.Locations, location)
 		}
 	}
 	return nearby, nil
 }
 
-// All returns a SearchResult containing all CrimeLocations in the CrimeFinder.
-func (t *CrimeFinder) All() SearchResult {
+// All returns a SearchResult containing all LocationLookup in the CrimeFinder.
+func (finder *CrimeFinder) All() SearchResult {
 	all := SearchResult{}
-	all.CrimeLocations = t.CrimeLocations
+	all.Locations = finder.Locations()
 	return all
 }
 
 // loadFromCsv hydrates a CrimeFinder from CSV data.
-func (t *CrimeFinder) loadFromCsv(rows CsvRows) error {
-	locations := make(CrimeLocations)
+func (finder *CrimeFinder) loadFromCsv(rows CsvRows) error {
+	locations := make(LocationLookup)
 	numCrimes := 0
 	for _, row := range rows {
 		location, err := locations.getOrCreateFromCsvRow(row)
 		if err != nil {
-			return err
+			continue
 		}
 		// Parse the "id" column as an int64
 		id, err := strconv.ParseInt(row[0], 0, 64)
 		if err != nil {
-			return err
+			continue
 		}
 		crimeType := string(row[3])
-		if !t.CrimeTypes.Contains(crimeType) {
-			t.CrimeTypes = append(t.CrimeTypes, crimeType)
+		if !finder.CrimeTypes.Contains(crimeType) {
+			finder.CrimeTypes = append(finder.CrimeTypes, crimeType)
 		}
 		location.Crimes = append(location.Crimes, &Crime{id, row[1], row[2], crimeType})
 		numCrimes += 1
 	}
 	log.Printf("Loaded %v crimes and %v locations", numCrimes, len(locations))
-	t.CrimeLocations = locations
+	finder.LocationLookup = locations
 	return nil
 }
 
@@ -215,19 +227,19 @@ func NewCrimeFinder(filename string) (CrimeFinder, error) {
 	if err != nil {
 		return finder, err
 	}
-	points := finder.All().Points()
-	nodes := make([]*kdtree.Node, len(points))
-	for i, p := range points {
-		n := kdtree.Node(*p)
-		nodes[i] = &n
+	nodes := make([]*kdtree.Node, 0)
+	for _, location := range finder.LocationLookup {
+		node := kdtree.Node{}
+		node.Coordinates = Coordinates{location.Point.Lat, location.Point.Lng}
+		nodes = append(nodes, &node)
 	}
 	finder.Tree = kdtree.BuildTree(nodes)
 	return finder, nil
 }
 
-// getCoordKey returns a pair of float64 coordinates as strings.
-func getCoordKey(x float64, y float64) string {
-	return fmt.Sprintf("%s,%s", x, y)
+// GetCoordinateKey returns a pair of float64 coordinates as strings.
+func GetCoordinateKey(x float64, y float64) string {
+	return fmt.Sprintf("%v,%v", x, y)
 }
 
 // isFloat checks if a string is coercible to a float.

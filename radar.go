@@ -25,16 +25,20 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	lat, _ := strconv.ParseFloat(vars["lat"], 64)
 	lng, _ := strconv.ParseFloat(vars["lng"], 64)
 
-	query := radar.Point{}
-	query.Coordinates = []float64{lat, lng}
+	query := radar.Point{lat, lng}
 	nearby, err := finder.FindNear(query)
 	if err != nil {
 		http.Error(w, http.StatusText(500), 500)
 		log.Fatal(err)
 		return
 	}
-	resp := nearby.Crimes().ToJson()
-	w.Write(resp.Bytes())
+	resp, err := nearby.ToJson()
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		log.Fatal(err)
+		return
+	}
+	w.Write(resp)
 	defer r.Body.Close()
 }
 

@@ -15,11 +15,11 @@ var EARTH_RADIUS = 3959.0
 // Used to verify distance-based search.
 // https://github.com/kellydunn/golang-geo/blob/master/point.go
 func (p *Point) GreatCircleDistance(p2 *Point) float64 {
-	dLat := (p2.Coordinates[1] - p.Coordinates[1]) * (math.Pi / 180.0)
-	dLon := (p2.Coordinates[0] - p.Coordinates[0]) * (math.Pi / 180.0)
+	dLat := (p2.Lat - p.Lat) * (math.Pi / 180.0)
+	dLon := (p2.Lng - p.Lng) * (math.Pi / 180.0)
 
-	lat1 := p.Coordinates[1] * (math.Pi / 180.0)
-	lat2 := p2.Coordinates[1] * (math.Pi / 180.0)
+	lat1 := p.Lat * (math.Pi / 180.0)
+	lat2 := p2.Lat * (math.Pi / 180.0)
 
 	a1 := math.Sin(dLat/2) * math.Sin(dLat/2)
 	a2 := math.Sin(dLon/2) * math.Sin(dLon/2) * math.Cos(lat1) * math.Cos(lat2)
@@ -87,23 +87,38 @@ func TestCrimesString(t *testing.T) {
 	}
 }
 
-func TestCrimesToJson(t *testing.T) {
-	expectedCrimes := Crimes{
+func TestSearchResultToJson(t *testing.T) {
+	crimes := Crimes{
 		{int64(1), "1/1/2013", "04:30", "Burglary"},
 		{int64(2), "1/2/2013", "04:45", "Robbery"},
 	}
-	expectedJson := `[{1,"1/1/2013","04:30","Burglary"},{2,"1/2/2013","04:45","Robbery"}]`
-	actualJson := expectedCrimes.ToJson()
-	if expectedJson != actualJson.String() {
-		t.Error("Crimes JSON string is wrong. Expected: ", expectedJson, "Actual: ", actualJson.String())
+	crimePoint := Point{45.1, -122.3}
+	location := CrimeLocation{
+		&crimePoint,
+		crimes,
+	}
+	queryPoint := Point{45.1, -122.3}
+	node := kdtree.Node{}
+	node.Coordinates = Coordinates{crimePoint.Lat, crimePoint.Lng}
+	searchResult := SearchResult{
+		&queryPoint,
+		[]*CrimeLocation{&location},
+	}
+	expectedJson := `{"query":{"lat":45.1,"lng":-122.3},"locations":[{"point":{"lat":45.1,"lng":-122.3},"crimes":[{"id":1,"date":"1/1/2013","time":"04:30","type":"Burglary"},{"id":2,"date":"1/2/2013","time":"04:45","type":"Robbery"}]}]}`
+	actualJson, err := searchResult.ToJson()
+	jsonString := string(actualJson[:])
+	if err != nil {
+		t.Error("ToJson returned an error: ", err)
+	}
+	if expectedJson != jsonString {
+		t.Error("Crimes JSON string is wrong. Expected: ", expectedJson, "Actual: ", jsonString)
 	}
 }
 
 // CrimeLocation tests
 
 func TestCrimeLocationHasFields(t *testing.T) {
-	expectedPoint := Point{}
-	expectedPoint.Coordinates = []float64{20.2, 33.34}
+	expectedPoint := Point{20.2, 33.34}
 	crimes := make([]*Crime, 0)
 	l := &CrimeLocation{&expectedPoint, crimes}
 	address1 := &expectedPoint
@@ -114,40 +129,40 @@ func TestCrimeLocationHasFields(t *testing.T) {
 	}
 }
 
-func TestCrimeLocationsGetOrCreateFromRowDoesNotExist(t *testing.T) {
+func TestLocationLookupGetOrCreateFromRowDoesNotExist(t *testing.T) {
 	csvRow := CsvRow{"13690824", "05/27/2011", "08:35:00", "Liquor Laws", "NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212", "ELIOT", "PORTLAND PREC NO", "590", "45.53579735412487", "-122.66468312170824"}
-	locations := make(CrimeLocations, 0)
+	locations := make(LocationLookup, 0)
 	location, _ := locations.getOrCreateFromCsvRow(csvRow)
-	if location.Point.Coordinates[0] != float64(45.53579735412487) {
-		t.Error("CrimeLocation has the wrong x coordinate", location.Point.Coordinates[0])
+	if location.Point.Lat != float64(45.53579735412487) {
+		t.Error("CrimeLocation has the wrong latitude", location.Point.Lat)
 	}
-	if location.Point.Coordinates[1] != float64(-122.66468312170824) {
-		t.Error("CrimeLocation has the wrong y coordiante", location.Point.Coordinates[1])
+	if location.Point.Lng != float64(-122.66468312170824) {
+		t.Error("CrimeLocation has the wrong longitude", location.Point.Lng)
 	}
 	if len(locations) != 1 {
-		t.Error("CrimeLocations should only have one CrimeLocation")
+		t.Error("LocationLookup should only have one CrimeLocation")
 	}
 }
 
-func TestCrimeLocationsGetOrCreateFromRowExists(t *testing.T) {
+func TestLocationLookupGetOrCreateFromRowExists(t *testing.T) {
 	csvRow := CsvRow{"13690824", "05/27/2011", "08:35:00", "Liquor Laws", "NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212", "ELIOT", "PORTLAND PREC NO", "590", "45.53579735412487", "-122.66468312170824"}
-	locations := make(CrimeLocations, 0)
+	locations := make(LocationLookup, 0)
 	location, _ := locations.getOrCreateFromCsvRow(csvRow)
 	// Call again with data at the same coordinates
 	location2, _ := locations.getOrCreateFromCsvRow(csvRow)
 
 	if len(locations) != 1 {
-		t.Error("CrimeLocations should only have one CrimeLocation")
+		t.Error("LocationLookup should only have one CrimeLocation")
 	}
 	if location != location2 {
-		t.Error("CrimeLocations should have returned the same CrimeLocation, not created a second one", location, location2)
+		t.Error("LocationLookup should have returned the same CrimeLocation, not created a second one", location, location2)
 	}
 }
 
-func TestCrimeLocationsGetOrCreateFromRowBadLatitude(t *testing.T) {
+func TestLocationLookupGetOrCreateFromRowBadLatitude(t *testing.T) {
 	// The latitude is munged so it won't convert to float64
 	csvRow := CsvRow{"13690824", "05/27/2011", "08:35:00", "Liquor Laws", "NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212", "ELIOT", "PORTLAND PREC NO", "590", "45.53579735412487", "not-a-float"}
-	locations := make(CrimeLocations, 0)
+	locations := make(LocationLookup, 0)
 	_, err := locations.getOrCreateFromCsvRow(csvRow)
 
 	if err == nil {
@@ -155,10 +170,10 @@ func TestCrimeLocationsGetOrCreateFromRowBadLatitude(t *testing.T) {
 	}
 }
 
-func TestCrimeLocationsGetOrCreateFromRowBadLongitude(t *testing.T) {
+func TestLocationLookupGetOrCreateFromRowBadLongitude(t *testing.T) {
 	// The longitude is munged so it won't convert to float64
 	csvRow := CsvRow{"13690824", "05/27/2011", "08:35:00", "Liquor Laws", "NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212", "ELIOT", "PORTLAND PREC NO", "590", "not-a-float", "-122.66468312170824"}
-	locations := make(CrimeLocations, 0)
+	locations := make(LocationLookup, 0)
 	_, err := locations.getOrCreateFromCsvRow(csvRow)
 
 	if err == nil {
@@ -173,21 +188,25 @@ func TestCrimeFinderFields(t *testing.T) {
 	// 1-length slice just to test that we set the value
 	crimeTypes := make(CrimeTypes, 1)
 	finder.CrimeTypes = crimeTypes
-	// 1-length slice just to test that we set the value
-	locations := make(CrimeLocations)
+	locations := make(LocationLookup)
+
 	csvRow := CsvRow{"13690824", "05/27/2011", "08:35:00", "Liquor Laws", "NE SCHUYLER ST and NE 1ST AVE, PORTLAND, OR 97212", "ELIOT", "PORTLAND PREC NO", "590", "45.53579735412487", "-122.66468312170824"}
-	loc, _ := locations.getOrCreateFromCsvRow(csvRow)
-	coordKey := loc.GetCoordinateString()
-	finder.CrimeLocations = locations
+	_, err := locations.getOrCreateFromCsvRow(csvRow)
+	if err != nil {
+		t.Error("Could not create CrimeLocation: ", err)
+	}
+	finder.LocationLookup = locations
 	nodes := make([]*kdtree.Node, 0)
+	for _, location := range finder.LocationLookup {
+		node := kdtree.Node{}
+		node.Coordinates = Coordinates{location.Point.Lat, location.Point.Lng}
+		nodes = append(nodes, &node)
+	}
 	tree := kdtree.BuildTree(nodes)
 	finder.Tree = tree
 
 	if len(finder.CrimeTypes) != 1 {
 		t.Error("CrimeFinder.CrimeTypes value is wrong")
-	}
-	if loc != finder.CrimeLocations[coordKey] {
-		t.Error("CrimeFinder.CrimeLocations value is wrong")
 	}
 	if finder.Tree != tree {
 		t.Error("CrimeFinder.Tree value is wrong")
@@ -199,8 +218,8 @@ func TestCrimeFinderNewCrimeFinder(t *testing.T) {
 	if err != nil {
 		t.Error("Error creating CrimeFinder: ", err)
 	}
-	if len(finder.CrimeLocations) != 224 {
-		t.Error("Wrong number of CrimeLocations: ", len(finder.CrimeLocations))
+	if len(finder.LocationLookup) != 224 {
+		t.Error("Wrong number of LocationLookup: ", len(finder.LocationLookup))
 	}
 }
 
@@ -210,37 +229,48 @@ func TestCrimeFinderAll(t *testing.T) {
 		t.Error("Error creating CrimeFinder: ", err)
 	}
 	all := finder.All()
-	allCrimes := all.Crimes()
 
 	expectedLocations := 224
-	expectedCrimes := 2321
+	numLocations := len(all.Locations)
 
-	numCrimeLocations := len(all.CrimeLocations)
-	numCrimes := len(allCrimes)
-
-	if expectedLocations != numCrimeLocations {
-		t.Error("Wrong number of CrimeLocations: ", numCrimeLocations)
+	if expectedLocations != numLocations {
+		t.Error("Wrong number of Locations in the LocationLookup table: ", numLocations)
 	}
-	if expectedCrimes != numCrimes {
-		t.Error("Wrong number of Crimes: ", numCrimes)
+}
+
+func TestCrimeFinderLocations(t *testing.T) {
+	finder, err := NewCrimeFinder("../data/test.csv")
+	if err != nil {
+		t.Error("Error creating CrimeFinder: ", err)
+	}
+	locations := finder.Locations()
+
+	expectedLocations := 224
+	numLocations := len(locations)
+
+	if expectedLocations != numLocations {
+		t.Error("Wrong number of Locations in the returned by finder.Locations(): ", numLocations)
 	}
 }
 
 func TestCrimeFinderFindNear(t *testing.T) {
 	finder, _ := NewCrimeFinder("../data/test.csv")
-	point := Point{}
-	point.Coordinates = []float64{45.53435699129174, -122.66469510763777}
+	point := Point{45.53435699129174, -122.66469510763777}
 	result, _ := finder.FindNear(point)
 
 	expectedLocations := 14
-	numLocations := len(result.CrimeLocations)
+	numLocations := len(result.Locations)
 
 	if expectedLocations != numLocations {
-		t.Error("Wrong number of CrimeLocations: ", numLocations)
+		t.Error("FindNear returned the number of LocationLookup: ", numLocations)
+	}
+
+	if *result.Query != point {
+		t.Error("FindNear result had the wrong query", result.Query)
 	}
 
 	// Verify that no distance is more than 0.5 miles
-	for _, p := range result.CrimeLocations {
+	for _, p := range result.Locations {
 		distance := p.Point.GreatCircleDistance(&point)
 		if distance > 0.5 {
 			t.Error("FindNear returned a CrimeLocation more than half a mile away")
@@ -251,14 +281,22 @@ func TestCrimeFinderFindNear(t *testing.T) {
 // A regression test to make sure we find locations near a known-good location.
 func TestCrimeFinderFindNearRegression(t *testing.T) {
 	finder, _ := NewCrimeFinder("../data/crime_incident_data_wgs84.csv")
-	point := Point{}
-	point.Coordinates = []float64{45.5184, -122.6554}
+	point := Point{45.5184, -122.6554}
 	result, _ := finder.FindNear(point)
 
 	expectedLocations := 247
-	numLocations := len(result.CrimeLocations)
+	numLocations := len(result.Locations)
 
 	if expectedLocations != numLocations {
-		t.Error("Wrong number of CrimeLocations: ", numLocations)
+		t.Error("Wrong number of Locations: ", numLocations)
+	}
+}
+
+func TestGetCoordinateKey(t *testing.T) {
+	x := 45.1
+	y := -122.1
+	key := GetCoordinateKey(x, y)
+	if key != "45.1,-122.1" {
+		t.Error("Coordinate key is wrong: ", key)
 	}
 }

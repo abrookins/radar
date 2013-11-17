@@ -72,6 +72,55 @@ Output on my machine:
 Benchmark stats depend on the location you use. Sometimes it's slower (1200
 reqs/sec) and sometimes faster (3500 reqs/sec).
 
+# The API
+
+There is only one endpoint right now: /crimes/near/{latitude}/{longitude}.
+
+Here is an example of a GET:
+
+    GET http://localhost:8081/crimes/near/45.5184/-122.6554
+
+Response:
+
+{
+    "query": {
+        "Lng": -122.6554,
+        "lat": 45.5184
+    },
+    "locations": [
+        {
+            "crimes": [
+                {
+                    "date": "04/18/2011",
+                    "id": 13667453,
+                    "time": "15:16:00",
+                    "type": "Liquor Laws"
+                },
+                {
+                    "date": "04/29/2011",
+                    "id": 13672680,
+                    "time": "13:45:00",
+                    "type": "Motor Vehicle Theft"
+                },
+                {
+                    "date": "09/17/2011",
+                    "id": 13760105,
+                    "time": "10:56:00",
+                    "type": "Larceny"
+                },
+                {
+                    "date": "12/15/2011",
+                    "id": 13815913,
+                    "time": "10:02:00",
+                    "type": "Larceny"
+                }
+            ],
+            "point": {
+                "Lng": -122.65769669639069,
+                "lat": 45.51793011872208
+            }
+        }
+}
 # License
 
 This code is licensed under the MIT license. See LICENSE for details.
