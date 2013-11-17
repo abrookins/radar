@@ -123,20 +123,25 @@ func (r SearchResult) Crimes() Crimes {
 func (r SearchResult) ToJson() ([]byte, error) {
 	buf := new(bytes.Buffer)
 	buf.WriteString(fmt.Sprintf(`{"query":{"lat":%v,"lng":%v},"locations":[`, r.Query.Lat, r.Query.Lng))
+	totalLocations := len(r.Locations)
 
-	for _, location := range r.Locations {
+	for x, location := range r.Locations {
 		total := len(location.Crimes)
 		buf.WriteString(fmt.Sprintf(`{"point":{"lat":%v,"lng":%v},`, location.Point.Lat, location.Point.Lng))
 		buf.WriteString(`"crimes":[`)
 		line := `{"id":%v,"date":"%v","time":"%v","type":"%v"}`
 		for i, crime := range location.Crimes {
-			isLast := total > 1 && i == total-1
+			isLast := i == total-1
 			buf.WriteString(fmt.Sprintf(line, crime.Id, crime.Date, crime.Time, crime.Type))
-			if !isLast {
+			if (total > 1) && !isLast {
 				buf.WriteString(",")
 			}
 		}
-		buf.WriteString("]},")
+		buf.WriteString("]}")
+		isLast :=  x == totalLocations-1
+		if (totalLocations > 1) && !isLast {
+			buf.WriteString(",")
+		}	
 	}
 	buf.WriteString("]}")
 	return buf.Bytes(), nil
