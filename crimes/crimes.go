@@ -14,10 +14,10 @@ import (
 	"github.com/unit3/kdtree"
 )
 
-// One half mile of latitude in the WGS84 coordinate system.
+// One half mile of latitude in the WGS84 coordinate system in Oregon.
 const HALF_MILE_LAT = 0.00714
 
-// One half mile of longitude in the WGS84 coordinate system.
+// One half mile of longitude in the WGS84 coordinate system in Oregon.
 const HALF_MILE_LNG = 0.00724
 
 // A Point represents a latitude and longitude coordinate pair.
