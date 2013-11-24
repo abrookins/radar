@@ -8,7 +8,7 @@ import (
 	"github.com/unit3/kdtree"
 )
 
-// Radius of the earth (M)
+// Radius of the earth (Miles)
 var EARTH_RADIUS = 3959.0
 
 // GreatCircleDistance calculates the Haversine distance between two points.
