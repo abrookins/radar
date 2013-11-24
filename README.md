@@ -52,7 +52,7 @@ The Procfile in the repo should do the necessaries. Now just push to Heroku!
 
 You can run benchmarks with `wrk` (https://github.com/wg/wrk) like this:
 
-    wrk -t12 -c400 -d30s "http://localhost:8081/?lat=45.548&lng=-122.6"
+    wrk -t12 -c400 -d30s "http://localhost:8081/crimes/near/45.5184/-122.6554"
 
 Send the web service a lat/long coordinate in Portland, Oregon as `lat` and
 `lng` GET parameters.
