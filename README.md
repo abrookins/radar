@@ -48,30 +48,6 @@ a popular Go buildpack:
 
 The Procfile in the repo should do the necessaries. Now just push to Heroku!
 
-# Benchmarking with wrk
-
-You can run benchmarks with `wrk` (https://github.com/wg/wrk) like this:
-
-    wrk -t12 -c400 -d30s "http://localhost:8081/crimes/near/45.5184/-122.6554"
-
-Send the web service a lat/long coordinate in Portland, Oregon as `lat` and
-`lng` GET parameters.
-
-Output on my machine:
-
-    Running 30s test @ http://localhost:8081/crimes/near/45.5184/-122.6554
-      12 threads and 400 connections
-      Thread Stats   Avg      Stdev     Max   +/- Stdev
-        Latency   190.92ms   22.74ms 290.56ms   72.67%
-        Req/Sec   104.24     18.19   146.00     63.32%
-      37487 requests in 30.01s, 2.07GB read
-      Socket errors: connect 157, read 143, write 0, timeout 2355
-    Requests/sec:   1249.21
-    Transfer/sec:     70.53MB
-    
-Benchmark stats depend on the location you use. Sometimes it's slower (1200
-reqs/sec) and sometimes faster (3500 reqs/sec).
-
 # The API
 
 There is only one endpoint right now: /crimes/near/{latitude}/{longitude}.
